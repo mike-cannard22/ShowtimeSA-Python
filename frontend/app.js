@@ -24,7 +24,7 @@ async function showPage(page) {
   if (page === 'gallery') return renderGalleryScatter('Gallery');
   if (page === 'products') return renderCarouselPage('Products');
   if (page === 'brochures') return renderListPage('Brochures');
-  if (page === 'videos') return renderListPage('Videos');
+  if (page === 'videos') return renderVideosTable('Videos');
   if (page === 'powerpoints') return renderListPage('Powerpoints');
 }
 

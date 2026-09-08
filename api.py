@@ -8,6 +8,9 @@ import mimetypes
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".showtimesa_config.json")
 
 class Api:
+    def get_video_port(self):
+        return self.video_port
+    
     def pick_folder(self):
         result = webview.windows[0].create_file_dialog(webview.FOLDER_DIALOG)
         return result[0] if result else None
