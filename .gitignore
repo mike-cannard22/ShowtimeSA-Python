@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node (only relevant if node_modules ever reappears, e.g. re-fetching
+# a newer Swiper version later)
+node_modules/
+package-lock.json
+
+# Packaging output (PyInstaller / briefcase)
+build/
+dist/
+*.spec
+
+# Editor
+.vscode/
+
+# OS-specific
+.DS_Store
+Thumbs.db
