@@ -77,6 +77,7 @@ class RangeRequestHandler(http.server.BaseHTTPRequestHandler):
             ".webm": "video/webm",
             ".mov": "video/quicktime",
             ".mkv": "video/x-matroska",
+            ".pdf": "application/pdf",
         }.get(ext, "application/octet-stream")
 
     def log_message(self, format, *args):

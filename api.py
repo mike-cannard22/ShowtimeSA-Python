@@ -11,6 +11,14 @@ class Api:
     def get_video_port(self):
         return self.video_port
     
+    def open_powerpoint(self, file_path):
+        try:
+            os.startfile(file_path)
+            return True
+        except Exception as e:
+            print(f"[open_powerpoint] failed: {e}")
+            return False
+    
     def pick_folder(self):
         result = webview.windows[0].create_file_dialog(webview.FOLDER_DIALOG)
         return result[0] if result else None
