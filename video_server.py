@@ -2,6 +2,7 @@
 import http.server
 import os
 import socketserver
+import sys
 import threading
 import urllib.parse
 
@@ -35,33 +36,37 @@ class RangeRequestHandler(http.server.BaseHTTPRequestHandler):
 
         if range_header:
             start, end = self._parse_range(range_header, file_size)
+            content_length = end - start + 1
             self.send_response(206)
             self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
-            self.send_header("Content-Length", str(end - start + 1))
+            self.send_header("Content-Length", str(content_length))
         else:
             start, end = 0, file_size - 1
+            content_length = file_size
             self.send_response(200)
-            self.send_header("Content-Length", str(file_size))
+            self.send_header("Content-Length", str(content_length))
 
         self.send_header("Content-Type", mime_type)
         self.send_header("Accept-Ranges", "bytes")
         self.end_headers()
 
-        with open(file_path, "rb") as f:
-            f.seek(start)
-            remaining = end - start + 1
-            chunk_size = 64 * 1024
-            while remaining > 0:
-                chunk = f.read(min(chunk_size, remaining))
-                if not chunk:
-                    break
-                try:
-                    self.wfile.write(chunk)
-                except (BrokenPipeError, ConnectionAbortedError):
-                    # Normal — happens when the user seeks/skips and the
-                    # browser drops the in-progress request
-                    break
-                remaining -= len(chunk)
+        try:
+            with open(file_path, 'rb') as f:
+                f.seek(start)
+                remaining = content_length
+                while remaining > 0:
+                    chunk = f.read(min(64 * 1024, remaining))
+                    if not chunk:
+                        break
+                    try:
+                        self.wfile.write(chunk)
+                    except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+                        # Client (WebView2) closed the connection mid-stream —
+                        # normal during seeking/looping, not an error.
+                        return
+                    remaining -= len(chunk)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            return
 
     def _parse_range(self, header, file_size):
         _, range_spec = header.split("=")
@@ -84,6 +89,21 @@ class RangeRequestHandler(http.server.BaseHTTPRequestHandler):
         pass  # suppress default request logging to the console
 
 
+class VideoHTTPServer(socketserver.ThreadingTCPServer):
+    """
+    Same as socketserver.ThreadingTCPServer, but silences the tracebacks
+    socketserver normally prints to the terminal when a client (WebView2)
+    aborts a connection mid-stream — expected during video seeking/looping,
+    not an actual server error.
+    """
+
+    def handle_error(self, request, client_address):
+        exc_type = sys.exc_info()[0]
+        if exc_type in (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            return
+        super().handle_error(request, client_address)
+
+
 def start_video_server(start_port=8765, max_attempts=20):
     """
     Binds strictly to 127.0.0.1 (loopback only — never reachable from the
@@ -96,9 +116,7 @@ def start_video_server(start_port=8765, max_attempts=20):
 
     for _ in range(max_attempts):
         try:
-            httpd = socketserver.ThreadingTCPServer(
-                ("127.0.0.1", port), RangeRequestHandler
-            )
+            httpd = VideoHTTPServer(("127.0.0.1", port), RangeRequestHandler)
             thread = threading.Thread(target=httpd.serve_forever, daemon=True)
             thread.start()
             return port

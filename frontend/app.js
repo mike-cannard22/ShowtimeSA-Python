@@ -1,3 +1,18 @@
+const APP_CONFIG = {
+  version: '1.0.0',
+  releaseDate: '2026-09-17',
+  links: {
+    website: {
+      label: 'InteractiveX Website',
+      url: 'https://www.interactivex.com.au'
+    },
+    eventPlatform: {
+      label: 'InteractiveX Event Platform',
+      url: 'https://www.interactivex.net.au'
+    }
+  }
+};
+
 let baseDirectory = null;
 
 const menuBtn = document.getElementById('menuBtn');
@@ -10,7 +25,7 @@ const navbarLogo = document.querySelector('.navbar-logo');
 // Whitelabel logo, if one exists under the current base directory
 async function loadLogo() {
   if (!baseDirectory) {
-    navbarLogo.innerHTML = 'ShowtimeSA';
+    navbarLogo.innerHTML = 'InteractiveX Showtime';
     return;
   }
 
@@ -62,12 +77,27 @@ menuDropdown.querySelectorAll('.navbar-dropdown-item[data-page]').forEach(item =
 });
 
 async function showPage(page) {
-  if (page === 'settings') return renderSettings();
   if (page === 'gallery') return renderGalleryScatter('Gallery');
   if (page === 'products') return renderCarouselPage('Products');
   if (page === 'brochures') return renderBrochuresPage('Brochures');
   if (page === 'videos') return renderVideosTable('Videos');
   if (page === 'powerpoints') return renderPowerpointsPage('Powerpoints');
+  if (page === 'settings') return renderSettings();
+}
+
+// Opens a link in the user's actual default browser when running under
+// pywebview (via a Python-side open_link method), falling back to
+// window.open if that method isn't available.
+async function openExternalLink(url) {
+  try {
+    if (window.pywebview?.api?.open_link) {
+      await window.pywebview.api.open_link(url);
+      return;
+    }
+  } catch (err) {
+    console.error('open_link failed, falling back to window.open:', err);
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 async function renderSettings() {
@@ -77,6 +107,14 @@ async function renderSettings() {
     <p>Current base directory: <strong id="currentDir">${current}</strong></p>
     <button id="chooseBtn">Choose Folder</button>
     <button id="saveBtn">Save</button>
+
+    <hr />
+
+    <p>Version ${APP_CONFIG.version} — Released ${APP_CONFIG.releaseDate}</p>
+    <p>
+      <a href="#" id="websiteLink">${APP_CONFIG.links.website.label}</a><br/>
+      <a href="#" id="eventPlatformLink">${APP_CONFIG.links.eventPlatform.label}</a>
+    </p>
   `;
 
   document.getElementById('chooseBtn').addEventListener('click', async () => {
@@ -100,6 +138,16 @@ async function renderSettings() {
       alert('Save failed: ' + err);
       console.error(err);
     }
+  });
+
+  document.getElementById('websiteLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    openExternalLink(APP_CONFIG.links.website.url);
+  });
+
+  document.getElementById('eventPlatformLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    openExternalLink(APP_CONFIG.links.eventPlatform.url);
   });
 }
 

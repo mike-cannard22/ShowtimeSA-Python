@@ -4,12 +4,16 @@ import json
 import webview
 import base64
 import mimetypes
+import webbrowser
 
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".showtimesa_config.json")
 
 class Api:
     def get_video_port(self):
         return self.video_port
+    
+    def open_link(self, url):
+        webbrowser.open(url)
     
     def open_powerpoint(self, file_path):
         try:

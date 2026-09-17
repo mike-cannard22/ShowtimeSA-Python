@@ -16,4 +16,4 @@ if __name__ == "__main__":
         width=1200,
         height=800,
     )
-    webview.start(debug=True)  # debug=True gives you dev tools during development
+    webview.start(debug=False)  # debug=True gives you dev tools during development
